@@ -45,8 +45,15 @@ class MazeGenerator:
             represented by 4 integers [West, South, East, North] (1=closed,
             0=open).
                 """
-        # maze: list = self.closed_grid_gen()
-        return mockup_maze
+        maze: list = self.closed_grid_gen()
+        path_stack: list = [self.entry]
+        visited_list: list = [self.entry]
+        current_cell = path_stack[-1]
+        neighbours_list = self.get_neighbours(current_cell, visited_list)
+        print(neighbours_list)
+
+        return maze
+        # return mockup_maze
 
     def blocked_42(self) -> None:
         """Mark the "42" pattern in the center as "visited" to keep its four walls closed"""
@@ -62,6 +69,30 @@ class MazeGenerator:
             Returns:
                 A list of cardinal direction steps (e.g., ['E', 'E', 'S', ...])."""
         return mockup_solution
+
+    def get_neighbours(self, current: tuple[int, int], visited_list: list[tuple[int, int]]) -> list[tuple[int, int]]:
+        """Return a list of valid unvisited neighour cells"""
+        visited = set(visited_list)
+        row, column = current
+        north: tuple = (row - 1, column)
+        south: tuple = (row + 1, column)
+        west: tuple = (row, column - 1)
+        east: tuple = (row, column + 1)
+        possible_neighbours: list[tuple[int, int]] = [north, south, west, east]
+        valid_unvisited_neighbours: list[tuple[int, int]] = []
+        
+        for neighbour in possible_neighbours:
+            r, c = neighbour
+            if 0 <= r < self.height and 0 <= c < self.width:
+                if neighbour not in visited:
+                    valid_unvisited_neighbours.append(neighbour)
+        return valid_unvisited_neighbours
+
+    def close_wall(self) -> None:
+        pass
+
+    def open_wall(self) -> None:
+        pass
 
 # Format: [West (8), South (4), East (2), North (1)]
 mockup_maze: list[list[list[int]]] = [
