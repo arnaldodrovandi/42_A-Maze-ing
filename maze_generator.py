@@ -22,7 +22,7 @@ class MazeGenerator:
 
     def __init__(self, width: int, height: int, entry: tuple[int, int],
                  exit: tuple[int, int], output_file: str, perfect: bool,
-                 seed: int|None = None) -> None:
+                 seed: int | None = None) -> None:
         self.width = width
         self.height = height
         self.entry = entry
@@ -62,14 +62,17 @@ class MazeGenerator:
                 is represented by 4 integers [West, South, East, North]
                 (1=closed, 0=open)."""
 
+        self.maze = self.closed_grid_gen()
+        if self.seed is not None:
+            random.seed(self.seed)
         path_stack: list = [self.entry]
         visited_list: list = [self.entry]
         self.close_42(visited_list)
-        print("Visited List:", visited_list)
         while path_stack:
             current_cell = path_stack[-1]
             all_neighbours_list = self.get_neighbours(current_cell)
-            unvisited_neighbours = self.is_visited(all_neighbours_list, visited_list)
+            unvisited_neighbours = self.is_visited(all_neighbours_list,
+                                                   visited_list)
             if unvisited_neighbours:
                 next_cell = random.choice(unvisited_neighbours)
                 self.open_wall(current_cell, next_cell)
@@ -83,31 +86,95 @@ class MazeGenerator:
         # return mockup_maze
 
     def close_42(self, visited: list) -> None:
-            """Mark the "42" pattern in the center as "visited" to keep its four
-            walls closed"""
+        """Mark the "42" pattern in the center as "visited" to keep its four
+        walls closed"""
 
-            if self.height >= 7 and self.width >= 9:
-                row_first_42_cell = int((self.height - 5)/2)
-                column_first_42_cell = int((self.width - 7)/2)
-                i = 0
-                for r, c in self.pattern_42:
-                    self.pattern_42[i] = (r + row_first_42_cell, c + column_first_42_cell)
-                    i += 1
-                visited.extend(self.pattern_42)
-            else:
-                print("Error: Maze too small!")
+        if self.height >= 7 and self.width >= 9:
+            row_first_42_cell = int((self.height - 5)/2)
+            column_first_42_cell = int((self.width - 7)/2)
+            i = 0
+            for r, c in self.pattern_42:
+                self.pattern_42[i] = (r + row_first_42_cell,
+                                      c + column_first_42_cell)
+                i += 1
+            visited.extend(self.pattern_42)
+        else:
+            self.pattern_42 = []
+            print("Error: Maze too small!")
 
+    def get_neighbours(self,
+                       current: tuple[int, int]) -> list[tuple[int, int]]:
+        """Return a list of valid visited neighour cells"""
+        row, column = current
+        north: tuple = (row - 1, column)
+        south: tuple = (row + 1, column)
+        west: tuple = (row, column - 1)
+        east: tuple = (row, column + 1)
+        possible_neighbours: list[tuple[int, int]] = [north, south, west, east]
+        valid_neighbours: list[tuple[int, int]] = []
+
+        for neighbour in possible_neighbours:
+            r, c = neighbour
+            if 0 <= r < self.height and 0 <= c < self.width:
+                valid_neighbours.append(neighbour)
+        return valid_neighbours
+
+    def is_visited(self, neighbours: list[tuple[int, int]],
+                   visited: list[tuple[int, int]]) -> list[tuple[int, int]]:
+        unvisited_neighbours: list[tuple[int, int]] = []
+        for neighbour in neighbours:
+            if neighbour not in visited:
+                unvisited_neighbours.append(neighbour)
+        return unvisited_neighbours
+
+    def open_wall(self, current_cell: tuple[int, int],
+                  next_cell: tuple[int, int]) -> None:
+        """Open the shared wall betwenn current_cell and next_cell"""
+        c_row, c_column = current_cell
+        n_row, n_column = next_cell
+
+        if c_column < n_column:
+            self.maze[c_row][c_column][EAST] = 0
+            self.maze[n_row][n_column][WEST] = 0
+        elif c_column > n_column:
+            self.maze[c_row][c_column][WEST] = 0
+            self.maze[n_row][n_column][EAST] = 0
+        elif c_row < n_row:
+            self.maze[c_row][c_column][SOUTH] = 0
+            self.maze[n_row][n_column][NORTH] = 0
+        else:
+            self.maze[c_row][c_column][NORTH] = 0
+            self.maze[n_row][n_column][SOUTH] = 0
+
+    def close_wall(self, current_cell: tuple[int, int],
+                   next_cell: tuple[int, int]) -> None:
+        """Close the shared wall betwenn current_cell and next_cell"""
+        c_row, c_column = current_cell
+        n_row, n_column = next_cell
+
+        if c_column < n_column:
+            self.maze[c_row][c_column][EAST] = 1
+            self.maze[n_row][n_column][WEST] = 1
+        elif c_column > n_column:
+            self.maze[c_row][c_column][WEST] = 1
+            self.maze[n_row][n_column][EAST] = 1
+        elif c_row < n_row:
+            self.maze[c_row][c_column][SOUTH] = 1
+            self.maze[n_row][n_column][NORTH] = 1
+        else:
+            self.maze[c_row][c_column][NORTH] = 1
+            self.maze[n_row][n_column][SOUTH] = 1
 
     def add_loops_maze(self) -> None:
         """Open loops(new paths) in the existing perfect maze to match the
            requirement perfect = False"""
-       
+
         for r, row in enumerate(self.maze):
             for c, cell in enumerate(row):
                 if sum(cell) == 3:
                     all_neighbours = self.get_neighbours((r, c))
-                    
-                    open_neighbour: tuple[int, int] = None                    
+
+                    open_neighbour: tuple[int, int] = None
                     if cell[WEST] == 0:
                         open_neighbour = (r, c - 1)
                     elif cell[EAST] == 0:
@@ -117,14 +184,36 @@ class MazeGenerator:
                     elif cell[SOUTH] == 0:
                         open_neighbour = (r + 1, c)
 
-                    closed_neighbours: list[tuple[int, int]] = []                    
+                    closed_neighbours: list[tuple[int, int]] = []
                     for neighbour in all_neighbours:
-                        if neighbour not in self.pattern_42 and neighbour != open_neighbour:
+                        if (neighbour not in self.pattern_42
+                                and neighbour != open_neighbour):
                             closed_neighbours.append(neighbour)
-                    if closed_neighbours:
-                        loop_cell = random.choice(closed_neighbours)
+                    random.shuffle(closed_neighbours)
+                    for loop_cell in closed_neighbours:
                         self.open_wall((r, c), loop_cell)
+                        if self.check_3x3_open_area():
+                            self.close_wall((r, c), loop_cell)
+                        else:
+                            break
 
+    def check_3x3_open_area(self) -> bool:
+        """Checks if any block of 3x3 cells has all internal walls open."""
+
+        for r, row in enumerate(self.maze):
+            for c, cell in enumerate(row):
+                if cell == [0, 0, 0, 0]:
+                    north_open: bool = (self.maze[r - 1][c][WEST] == 0
+                                        and self.maze[r - 1][c][EAST] == 0)
+                    south_open: bool = (self.maze[r + 1][c][WEST] == 0
+                                        and self.maze[r + 1][c][EAST] == 0)
+                    west_open: bool = (self.maze[r][c - 1][NORTH] == 0
+                                       and self.maze[r][c - 1][SOUTH] == 0)
+                    east_open: bool = (self.maze[r][c + 1][NORTH] == 0
+                                       and self.maze[r][c + 1][SOUTH] == 0)
+                    if north_open and south_open and west_open and east_open:
+                        return True
+        return False
 
     def maze_solver(self) -> list[str]:
         """Find the shortest path from entry to exit.
@@ -133,51 +222,6 @@ class MazeGenerator:
                 A list of cardinal direction steps
                 (e.g., ['E', 'E', 'S', ...])."""
         return mockup_solution
-
-
-    def is_visited(self, neighbours: list[tuple[int, int]], visited: list[tuple[int, int]]):
-        unvisited_neighbours: list[tuple[int, int]] = []
-        for neighbour in neighbours:
-            if neighbour not in visited:
-                unvisited_neighbours.append(neighbour)
-        return unvisited_neighbours    
-
-    def get_neighbours(self, current: tuple[int, int]) -> list[tuple[int, int]]:
-            """Return a list of valid visited neighour cells"""
-            row, column = current
-            north: tuple = (row - 1, column)
-            south: tuple = (row + 1, column)
-            west: tuple = (row, column - 1)
-            east: tuple = (row, column + 1)
-            possible_neighbours: list[tuple[int, int]] = [north, south, west, east]
-            valid_neighbours: list[tuple[int,int]] = []
-
-            for neighbour in possible_neighbours:
-                r, c = neighbour
-                if 0 <= r < self.height and 0 <= c < self.width:
-                    valid_neighbours.append(neighbour)
-            return valid_neighbours
-
-    def close_wall(self) -> None:
-        pass
-
-    def open_wall(self, current: tuple[int, int], next: tuple[int, int]) -> None:
-        """Open the shared wall betwenn current_cell and next_cell"""
-        c_row, c_column = current
-        n_row, n_column = next
-
-        if c_column < n_column:
-            self.maze[c_row][c_column][EAST] = 0  # Open East wall for current cell
-            self.maze[n_row][n_column][WEST] = 0  # Open West wall for next cell 
-        elif c_column > n_column:
-            self.maze[c_row][c_column][WEST] = 0  # Open West wall for current cell
-            self.maze[n_row][n_column][EAST] = 0  # Open East wall for next cell
-        elif c_row < n_row:
-            self.maze[c_row][c_column][SOUTH] = 0  # Open South wall for current cell
-            self.maze[n_row][n_column][NORTH] = 0  # Open North wall for next cell
-        else:
-            self.maze[c_row][c_column][NORTH] = 0  # Open North wall for current cell
-            self.maze[n_row][n_column][SOUTH] = 0  # Open South wall for next cell
 
 
 # Format: [West (8), South (4), East (2), North (1)]
