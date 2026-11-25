@@ -25,8 +25,8 @@ class MazeGenerator:
                  seed: int | None = None) -> None:
         self.width = width
         self.height = height
-        self.entry = entry
-        self.exit = exit
+        self.entry = (entry[1], entry[0])
+        self.exit = (exit[1], exit[0])
         self.output_file = output_file
         self.perfect = perfect
         self.seed = seed
@@ -104,7 +104,7 @@ class MazeGenerator:
 
     def get_neighbours(self,
                        current: tuple[int, int]) -> list[tuple[int, int]]:
-        """Return a list of valid visited neighour cells"""
+        """Return a list of valid neighour cells"""
         row, column = current
         north: tuple = (row - 1, column)
         south: tuple = (row + 1, column)
@@ -174,7 +174,7 @@ class MazeGenerator:
                 if sum(cell) == 3:
                     all_neighbours = self.get_neighbours((r, c))
 
-                    open_neighbour: tuple[int, int] = None
+                    open_neighbour = None
                     if cell[WEST] == 0:
                         open_neighbour = (r, c - 1)
                     elif cell[EAST] == 0:
@@ -221,42 +221,54 @@ class MazeGenerator:
             Returns:
                 A list of cardinal direction steps
                 (e.g., ['E', 'E', 'S', ...])."""
-        return mockup_solution
+        active_paths: list[list[tuple[int, int]]] = [[self.entry]]
+        visited_cells: list[tuple[int, int]] = [self.entry]
 
+        while active_paths:
+            current_path = active_paths.pop(0)
+            current_cell = current_path[-1]
 
-# Format: [West (8), South (4), East (2), North (1)]
-mockup_maze: list[list[list[int]]] = [
-    # Row 0: [13, 8, 5, 3, 9, 3, 9, 5, 5, 3]
-    [[1, 1, 0, 1], [0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [1, 0, 0, 1], [0, 0, 1, 1], [1, 0, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]],
-    # Row 1: [11, 14, 11, 10, 14, 10, 14, 9, 3, 10]
-    [[1, 0, 1, 1], [0, 1, 1, 0], [1, 0, 1, 1], [1, 0, 1, 0], [1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0], [1, 0, 0, 1], [0, 0, 1, 1], [1, 0, 1, 0]],
-    # Row 2: [12, 3, 10, 12, 5, 2, 9, 6, 10, 10]
-    [[1, 1, 0, 0], [0, 0, 1, 1], [1, 0, 1, 0], [1, 1, 0, 0], [0, 1, 0, 1], [0, 0, 1, 0], [1, 0, 0, 1], [0, 1, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0]],
-    # Row 3: [9, 4, 6, 9, 3, 10, 14, 9, 6, 10]
-    [[1, 0, 0, 1], [0, 1, 0, 0], [0, 1, 1, 0], [1, 0, 0, 1], [0, 0, 1, 1], [1, 0, 1, 0], [1, 1, 1, 0], [1, 0, 0, 1], [0, 1, 1, 0], [1, 0, 1, 0]],
-    # Row 4: [10, 9, 5, 6, 14, 8, 3, 10, 9, 6]
-    [[1, 0, 1, 0], [1, 0, 0, 1], [0, 1, 0, 1], [0, 1, 1, 0], [1, 1, 1, 0], [1, 0, 0, 0], [0, 0, 1, 1], [1, 0, 1, 0], [1, 0, 0, 1], [0, 1, 1, 0]],
-    # Row 5: [10, 10, 9, 5, 5, 6, 10, 14, 12, 3]
-    [[1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
-    # Row 6: [10, 14, 10, 9, 5, 7, 12, 5, 3, 10]
-    [[1, 0, 1, 0], [1, 1, 1, 0], [1, 0, 1, 0], [1, 0, 0, 1], [0, 1, 0, 1], [0, 1, 1, 1], [1, 1, 0, 0], [0, 1, 0, 1], [0, 0, 1, 1], [1, 0, 1, 0]],
-    # Row 7: [12, 3, 14, 10, 9, 5, 5, 3, 10, 14]
-    [[1, 1, 0, 0], [0, 0, 1, 1], [1, 1, 1, 0], [1, 0, 1, 0], [1, 0, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [1, 0, 1, 0], [1, 1, 1, 0]],
-    # Row 8: [11, 12, 3, 10, 14, 9, 3, 14, 8, 3]
-    [[1, 0, 1, 1], [1, 1, 0, 0], [0, 0, 1, 1], [1, 0, 1, 0], [1, 1, 1, 0], [1, 0, 0, 1], [0, 0, 1, 1], [1, 1, 1, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
-    # Row 9: [12, 7, 14, 12, 5, 6, 12, 5, 6, 14]
-    [[1, 1, 0, 0], [0, 1, 1, 1], [1, 1, 1, 0], [1, 1, 0, 0], [0, 1, 0, 1], [0, 1, 1, 0], [1, 1, 0, 0], [0, 1, 0, 1], [0, 1, 1, 0], [1, 1, 1, 0]],
-]
+            if current_cell == self.exit:
+                return self.directions(current_path)
 
-mockup_solution: list[str] = [
-    "E", "E", "E",
-    "S", "S",
-    "E", "E",
-    "S", "S",
-    "E",
-    "S", "S",
-    "E", "E",
-    "S", "S",
-    "E",
-    "S",
-]
+            open_paths = self.is_neighbour_open(current_cell)
+            for next_cell in open_paths:
+                if next_cell not in visited_cells:
+                    visited_cells.append(next_cell)
+                    new_path = current_path + [next_cell]
+                    active_paths.append(new_path)
+        return []
+
+    def is_neighbour_open(self, current_cell:
+                          tuple[int, int]) -> list[tuple[int, int]]:
+        """Return all neighbours sharing an open wall with current_cell"""
+
+        r, c = current_cell
+        open_neighbours: list[tuple[int, int]] = []
+        if self.maze[r][c][WEST] == 0:
+            open_neighbours.append((r, c - 1))
+        if self.maze[r][c][EAST] == 0:
+            open_neighbours.append((r, c + 1))
+        if self.maze[r][c][NORTH] == 0:
+            open_neighbours.append((r - 1, c))
+        if self.maze[r][c][SOUTH] == 0:
+            open_neighbours.append((r + 1, c))
+
+        return open_neighbours
+
+    def directions(self, current_path: list[tuple[int, int]]) -> list[str]:
+        """Convert a list of (r, c) coordinates into cardinal steps
+           example:[(0,0), (1,0), (1,1), (1,2)...] ---> ["S", "E", "E", ...]"""
+
+        shortest_path: list[str] = []
+        for (r1, c1), (r2, c2) in zip(current_path, current_path[1:]):
+            if r1 > r2:
+                shortest_path.append("N")
+            elif r1 < r2:
+                shortest_path.append("S")
+            elif c1 > c2:
+                shortest_path.append("W")
+            elif c1 < c2:
+                shortest_path.append("E")
+
+        return shortest_path
